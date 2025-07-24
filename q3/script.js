@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded",()=>
             actualTime: document.getElementById("actualTime").value,
             description: document.getElementById("issue").value.trim(),
             multiCrossing: document.getElementById("multiple").value === "yes",
-            securityCode: document.getElementById("security").value.trim(),
             email: document.getElementById("email").value.trim(),
             status: "פתוחה" 
         };
@@ -26,10 +25,9 @@ document.addEventListener("DOMContentLoaded",()=>
         messageBox.classList.add("success");
         messageBox.textContent = "הדיווח נשלח בהצלחה!";
         form.reset();
-    
         setTimeout(() => {
-        window.location.href = "view.html";
-    }, 1500);
+            window.location.href = "view.html";
+        }, 1500);
         } else {
         messageBox.classList.add("error");
         result.errors.forEach(err => {
@@ -43,29 +41,35 @@ document.addEventListener("DOMContentLoaded",()=>
 if (document.getElementById("time-faults-list")) {
     loadItems();
 }
+const filter = document.getElementById("filter");
+    if (filter) {
+        filter.addEventListener("change", function () {
+            filterItems(this.value);
+        });
+    }
 });
+function getItems() {
+    return JSON.parse(localStorage.getItem("timeBugs")) || [];
+}
+
 function saveItem(item) {
-    const current = JSON.parse(localStorage.getItem("timeBugs")) || [];
+    const current =getItems();
     current.push(item);
     localStorage.setItem("timeBugs", JSON.stringify(current));
 }
         function validateForm() {
         const errors = [];
         const canal = document.getElementById("canal").value.trim();
-        if (!canal) {
-            errors.push("יש למלא מספר תעלה.");
-        } else if (isNaN(canal) || parseInt(canal) <= 0) {
-            errors.push("מספר תעלה חייב להיות מספר חיובי (מעל 0).");
-        }
         const targetTime = document.getElementById("targetTime").value;
         const landingTime = document.getElementById("actualTime").value;
         const description = document.getElementById("issue").value.trim();
         const crossed = document.getElementById("multiple").value==="yes";
         const email = document.getElementById("email").value.trim();
-
         if (!canal) {
-            errors.push("יש למלא מספר תעלה.");
-        }
+                    errors.push("יש למלא מספר תעלה.");
+                } else if (isNaN(canal) || parseInt(canal) <= 0) {
+                    errors.push("מספר תעלה חייב להיות מספר חיובי (מעל 0).");
+                }
         if (!email) {
             errors.push("יש למלא כתובת אימייל.");
         } else if (!validateEmail(email)) {
@@ -74,36 +78,40 @@ function saveItem(item) {
         if (targetTime && landingTime && targetTime > landingTime) {
             errors.push("זמן היעד לא יכול להיות אחרי זמן הנחיתה.");
         }
-        if (description.length > 250) {
+        if (!description) {
+            errors.push("יש לבחור תיאור תקלה.");
+        } else if (description.length > 250) {
             errors.push("תיאור התקלה ארוך מדי (מעל 250 תווים).");
         }
-
         return {
             valid: errors.length === 0,
             errors: errors
         };
     }
 
-
 function validateEmail(email) {
     const re = /^\S+@\S+\.\S+$/;
     return re.test(email);
 }
 function loadItems() {
-    const items = JSON.parse(localStorage.getItem("timeBugs")) || [];
+    const items = getItems();
     renderItems(items);
     calculateAverageDelay(items);
     
 }
-document.getElementById("filter").addEventListener("change", function () {
-    filterItems(this.value);
-});
+// document.getElementById("filter").addEventListener("change", function () {
+//     filterItems(this.value);
+// });
 
 function renderItems(items) {
     const container = document.getElementById("time-faults-list");
     if (!container) return;
     container.innerHTML = "";
 
+    if (items.length === 0) {
+        container.innerHTML = "<p class='no-items'>אין תקלות להצגה.</p>";
+        return;
+    }
     items.forEach(item => {
         const card = document.createElement("div");
         card.className = "card";
@@ -114,7 +122,6 @@ function renderItems(items) {
             <p><strong>נחיתה:</strong> ${item.actualTime}</p>
             <p><strong>תקלה:</strong> ${item.description}</p>
             <p><strong>האם יותר מאדם אחד חצה?</strong> ${item.multiCrossing ? "כן" : "לא"}</p>
-            <p><strong>אבטחה:</strong> ${item.securityCode}</p>
             <p><strong>מייל:</strong> ${item.email}</p>
             <p><strong>סטטוס:</strong> <span class="status ${item.status === "טופלה" ? "done" : "open"}">${item.status}</span></p>
             <button onclick="updateItem('${item.id}')">שנה סטטוס</button>
@@ -125,14 +132,14 @@ function renderItems(items) {
     });
 }
 function deleteItem(id) {
-    let items = JSON.parse(localStorage.getItem("timeBugs")) || [];
+    let items = getItems();
     items = items.filter((item) => item.id !== id);
     localStorage.setItem("timeBugs", JSON.stringify(items));
     renderItems(items);
     calculateAverageDelay(items);
 }
 function updateItem(id) {
-    let items = JSON.parse(localStorage.getItem("timeBugs")) || [];
+    let items = getItems();
     items = items.map((item) => {
         if (item.id === id) {
         item.status = item.status === "פתוחה" ? "טופלה" : "פתוחה";
@@ -141,6 +148,7 @@ function updateItem(id) {
     });
     localStorage.setItem("timeBugs", JSON.stringify(items));
     renderItems(items);
+    calculateAverageDelay(items);
 }
 
 function calculateAverageDelay(items) {
@@ -158,7 +166,7 @@ function calculateAverageDelay(items) {
     items.forEach((item) => {
         const target = new Date("2000-01-01T" + item.targetTime);
         const actual = new Date("2000-01-01T" + item.actualTime);
-        const diff = Math.abs(actual - target) / 60000; // דקות
+        const diff = Math.abs(actual - target) / 60000;
         if (!isNaN(diff)) {
         totalDiff += diff;
         count++;
@@ -169,15 +177,12 @@ function calculateAverageDelay(items) {
     delayContainer.textContent = `ממוצע סטיית זמן: ${avg} דקות`;
 }
 function filterItems(type) {
-    const allItems = JSON.parse(localStorage.getItem("timeBugs")) || [];
+    const allItems = getItems();
 
-    if (type === "all") {
-        renderItems(allItems);
-        calculateAverageDelay(allItems);
-        return;
-    }
+    const filtered = type === "all"
+        ? allItems
+        : allItems.filter(item => item.description === type);
 
-    const filtered = allItems.filter(item => item.description === type);
     renderItems(filtered);
     calculateAverageDelay(filtered);
 }
