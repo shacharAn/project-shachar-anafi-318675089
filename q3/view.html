@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>לוח תקלות זמן</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header>
+            <h1>לוח תקלות זמן</h1>
+            <label for="filter">סנן לפי תקלה:</label>
+            <select id="filter">
+                <option value="all">הצג הכל</option>
+                <option value="vibration">רעד</option>
+                <option value="timeHole">חור בזמן</option>
+                <option value="dino">מפגש עם דינוזאור</option>
+            </select>
+            <p id="average-delay"></p>
+            <a href="index.html" class="btn-report">דווח תקלה חדשה</a>
+        </header>
+        <main>
+            <section id="time-faults-list" class="cards-container">
+                <p id="average-delay"></p>
+            </section>
+        </main>
+        <script src="script.js"></script>
+    </body>
+</html>
